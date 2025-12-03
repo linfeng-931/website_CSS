@@ -1,0 +1,362 @@
+:root{
+    --main-color: #FF7029;
+    --color1: #23B1A5;
+    --color2: #F0D23D;
+    --bg: rgb(229, 223, 211);
+}
+.barriecito-regular {
+    font-family: "Barriecito", system-ui;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.zen-kaku-gothic-new-regular {
+  font-family: "Zen Kaku Gothic New", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+body{
+    font-family: "Zen Kaku Gothic New";
+    letter-spacing: .8px;
+    line-height: 1.6rem;
+    margin: 0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+header{
+    display: flex;
+    flex-direction: row-reverse;
+    padding: 1rem 3rem;
+}
+a{
+    color:black;
+    background-color: white;
+    padding: .3rem 1rem;
+    border-radius: 3rem;
+    box-shadow: 0px 0px 3px gainsboro;
+    text-decoration: none;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+a:hover{
+    background-color: black;
+    cursor: pointer;
+    transition: .2s;
+    color: white;
+}
+a:hover img {
+    filter: brightness(0) invert(1);
+}
+mark{
+    background-color: white;
+    padding: 0 .5rem;
+    border-radius: 3rem;
+}
+.link-list{
+    display: flex;
+    gap:1.2rem
+}
+hr{
+    background-color: black;
+    height: .2rem;
+    width: 20rem;
+    border-width: 0;
+    opacity: 25%;
+}
+.title{
+    font-weight: 500;
+    font-family: "Barriecito";
+    font-size: 1.5rem;
+}
+.subtitle1{
+    font-weight: 500;
+    font-family: "Barriecito";
+}
+
+/*bg*/
+.photo-container {
+    width: 100%;           /* 滿版寬 */
+    overflow: hidden;      /* 超出部分隱藏 */
+    position: absolute;
+    z-index: -1;
+}
+.photo-container img {
+    object-fit: cover;     /* 保持比例，填滿容器 */ 
+    filter: brightness(85%) grayscale(30%);
+}
+
+/*about me*/
+.aboutMe-container{
+    margin-top: 5rem;
+    position: relative;
+    height: 50rem;
+    width: 85rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#text-protfolio{
+    position: absolute;
+    font-family: "Barriecito";
+    font-size: 14rem;
+    color: white;
+    z-index: 0;
+    top: -40px;
+    left:70px
+}
+#img-protfolio{
+    position: absolute;
+    z-index: 1;
+    top:-20px;
+}
+.hint-container{
+    position:absolute;
+    z-index: 2;
+    left: 100px;
+    bottom: 130px;
+}
+.hint1{
+    background-color: black;
+    color: white;
+    font-size: 1.3rem;
+    padding: .5rem 2rem;
+    border-radius: 3rem;
+    margin-right: 3rem;
+}
+.hint2{
+    background-color: black;
+    color: white;
+    font-size: 1.3rem;
+    padding: .5rem 2rem;
+    border-radius: 3rem;
+    margin-left: 3rem;
+}
+#content-protfolio{
+    position: absolute;
+    width:35rem;
+    z-index: 2;
+    right: 0;
+    bottom: 120px;
+}
+#content-protfolio .title{
+    margin-bottom: 1.5rem;
+    font-family: "Zen Kaku Gothic New";
+    color:white;
+    font-size: 3rem;
+    font-weight: 400;
+}
+#content-protfolio .subtitle1{
+    color: white;
+}
+
+/*learn-container*/
+.learn-container{
+    margin-top: 15rem;
+    margin-bottom: 15rem;
+    width: 85rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.learn-container section{
+    display: flex; 
+    gap: 2.5rem;
+}
+.learn-container .title{
+    margin-bottom: 0;
+}
+.learn-container .content{
+    width: 15rem;
+}
+.learn-container .content .list{
+    border-radius: 1.5rem;
+    height: 14rem;
+    padding-top: 2.3rem;
+    margin-top: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    color: white;
+}
+.list1{
+    background-color: var(--main-color);
+}
+.list2{
+    background-color: var(--color1);
+}
+.list3{
+    background-color: var(--color2);
+}
+
+.learn-container .subtitle1{
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 5px;
+    padding-bottom: 0;
+}
+.subtitle1-1{
+    color: var(--main-color);
+}
+.subtitle1-2{
+    color: var(--color1);
+}
+.subtitle1-3{
+    color: var(--color2);
+}
+
+/*skill*/
+.skill-container{
+    margin-top: 15rem;
+    margin-bottom: 3rem;
+    width: 85rem;
+    display: flex;
+    gap: 10rem;
+    justify-content: center;
+    align-items: center;
+}
+.skill-container .content{
+    height: 3rem;
+}
+.bar-container{
+    height: 8.5rem;
+    margin-bottom: 2rem;
+}
+.bar-container .content{
+    display: flex;
+}
+.bar{
+    display: flex;
+    width: 30rem;
+    position: relative;
+}
+
+.bar-container1 .bar1{
+    background-color: var(--main-color);
+    width: 50%;
+    height: 16px;
+    border-radius: 3rem;
+    position: absolute;
+    z-index: 5;
+}
+.bar-container1 .bar2{
+    background-color: var(--color2);
+    position: absolute;
+    width: 70%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 4;
+}
+.bar-container1 .bar3{
+    background-color: var(--color1);
+    position: absolute;
+    width: 90%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 3;
+}
+.bar-container1 .bar4{
+    background-color: rgb(211, 211, 211);
+    position: absolute;
+    width: 95%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 2;
+}
+.bar-container1 .bar5{
+    background-color: rgb(235, 235, 235);
+    position: absolute;
+    width: 100%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 1;
+}
+.bar-container1 .content1{
+    width: 4rem;
+    margin-right: 11rem;
+}
+.bar-container1 .content2{
+    width: 4rem;
+    margin-right: 2rem;
+}
+.bar-container1 .content3{
+    width: 4rem;
+    margin-right: 1.8rem;
+}
+.bar-container1 .content4{
+    width: 1.5rem;
+}
+
+.bar-container2 .bar1{
+    background-color: var(--main-color);
+    width: 60%;
+    height: 16px;
+    border-radius: 3rem;
+    position: absolute;
+    z-index: 5;
+}
+.bar-container2 .bar2{
+    background-color: var(--color2);
+    position: absolute;
+    width: 85%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 4;
+}
+.bar-container2 .bar3{
+    background-color: var(--color1);
+    position: absolute;
+    width: 100%;
+    height: 16px;
+    border-radius: 3rem;
+    z-index: 3;
+}
+.bar-container2 .content1{
+    width: 4rem;
+    margin-right: 13.8rem;
+}
+.bar-container2 .content2{
+    width: 5rem;
+    margin-right: 2.8rem;
+}
+
+/*goto*/
+.goto-container{
+    margin-bottom: 13rem;
+    width: 85rem;
+    display: flex;
+    gap: 10rem;
+    justify-content: center;
+    align-items: center;
+}   
+
+/*footer*/
+footer{
+    background-color: rgb(0, 0, 0);
+    height: 25rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+footer p{
+    color: white;
+}
+.contact{
+    display: flex;
+    gap: 3rem;
+}
+.contact img{
+    filter: brightness(0) invert(1);
+}
+footer .title{
+    margin-top: 5rem;
+    margin-bottom: 3rem;
+}
+.date{
+    margin-top:9rem; 
+}

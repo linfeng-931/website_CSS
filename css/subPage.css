@@ -68,8 +68,9 @@ main{
     margin: 8rem 0;
 }
 .introduce-container2{
-    flex-direction: row;
+    display: flex;
     justify-content: center;
+    gap: 5rem;
 }
 .introduce-container a{
     margin-top: 3rem;

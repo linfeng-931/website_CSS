@@ -51,6 +51,14 @@ a:hover{
 a:hover img {
     filter: brightness(0) invert(1);
 }
+.link-disable{
+    background-color: black;
+    opacity: 50%;
+    color: white;
+}
+.link-disable:hover{
+    cursor: default;
+}
 mark{
     background-color: white;
     padding: 0 .5rem;
@@ -75,6 +83,9 @@ hr{
 .subtitle1{
     font-weight: 500;
     font-family: "Barriecito";
+}
+video{
+    display: block;
 }
 
 /*bg*/

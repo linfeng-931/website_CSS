@@ -7,6 +7,12 @@ main{
     padding: 9rem 10rem;
     color: white;
 }
+#contentOfTable2{
+    background: var(--main-color);
+}
+#contentOfTable3{
+    background: var(--color2);
+}
 .titleContainer{
     display: flex;
     align-items: center;
@@ -26,6 +32,12 @@ main{
     margin-top: 1.2rem;
     padding: 0;
     font-weight: 800;
+}
+#circle2 p{
+    color: var(--main-color);
+}
+#circle3 p{
+    color: var(--color2);
 }
 .tableTitle{
     width: 100%;
@@ -55,6 +67,10 @@ main{
     align-items: center;
     margin: 8rem 0;
 }
+.introduce-container2{
+    flex-direction: row;
+    justify-content: center;
+}
 .introduce-container a{
     margin-top: 3rem;
     text-align: center;
@@ -77,4 +93,10 @@ main{
     border-radius: 1rem;
     font-size: 4rem;
     margin-bottom: 10rem;
+}
+#introduce-title2{
+    background: var(--main-color);
+}
+#introduce-title3{
+    background: var(--color2);
 }

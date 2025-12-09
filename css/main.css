@@ -371,6 +371,28 @@ footer .title{
 .date{
     margin-top:9rem; 
 }
+footer a{
+    background-color: unset;
+    box-shadow: unset;
+    position: relative;
+}
+footer a:hover img{
+    opacity: 70%;
+}
+.footerHint{
+    position: absolute;
+    top:3rem;
+    left:-5rem;
+    background: white;
+    padding: 2px 1rem;
+    border-radius: 3rem;
+    color:black;
+    opacity: 0;
+}
+footer a:hover .footerHint{
+    opacity: 100%;
+    transition: .2s;
+}
 
 
 @media (max-width: 1439px) {

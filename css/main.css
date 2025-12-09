@@ -371,3 +371,56 @@ footer .title{
 .date{
     margin-top:9rem; 
 }
+
+
+@media (max-width: 1439px) {
+    /*about me*/
+    .aboutMe-container{
+        width: 80%;
+    }
+    #img-protfolio{
+        width: 40rem;
+    }
+    .hint-container{
+        left: 0rem;
+    }
+    #content-protfolio{
+        width:28rem;
+        right: -12rem;
+    }
+    .learn-container{
+        width: 100%;
+    }
+    .learn-container section{
+        gap: 0;
+    }
+    .skill-container{
+        width: 100%;
+        gap: 10%;
+    }
+    .bar{
+        width: 20rem;
+    }
+    .bar-container1 .content1{
+        margin-right: 6rem;
+    }
+    .bar-container1 .content2{
+        margin-right: 0.3rem;
+    }
+    .bar-container1 .content3{
+        width: 3.5rem;
+        margin-right: 0rem;
+    }
+    .bar-container2 .content1{
+        width: 4rem;
+        margin-right: 8rem;
+    }
+    .bar-container2 .content2{
+        width: 5rem;
+        margin-right: 0rem;
+    }
+    .goto-container{
+        width: 100%;
+        gap: 10%;
+    } 
+}

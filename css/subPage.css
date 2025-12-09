@@ -1,6 +1,10 @@
 main{
     width: 100%;
 }
+embed{
+    border-radius: 1rem;
+    box-shadow: 1px 1px 10px rgb(212, 212, 212);
+}
 .contentOfTable{
     height: 37rem;
     background: var(--color1);
@@ -16,6 +20,7 @@ main{
 .titleContainer{
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
 }
 .circle{
     background-color: white;
@@ -45,11 +50,13 @@ main{
     font-size: 5rem;
     font-family: "Barriecito";
     margin-bottom: 8rem;
+    line-height: 5rem;
 }
 .tableContentContainer{
     display: flex;
     gap: 10rem;
     justify-content: center;
+    flex-wrap: wrap;
 }
 .tableContent ul{
     margin-left: 2rem;
@@ -66,11 +73,14 @@ main{
     flex-direction: column;
     align-items: center;
     margin: 8rem 0;
+    flex-wrap: wrap;
 }
 .introduce-container2{
     display: flex;
     justify-content: center;
     gap: 5rem;
+    flex-wrap: wrap;
+    margin: 0 2rem;
 }
 .introduce-container a{
     margin-top: 3rem;
@@ -86,6 +96,8 @@ main{
     gap: 5rem;
     margin-bottom: 12rem;
     align-items: center;
+    position: relative;
+    flex-wrap: wrap;
 }
 .introduce-title{
     background: var(--color1);
@@ -100,4 +112,53 @@ main{
 }
 #introduce-title3{
     background: var(--color2);
+}
+.circle-container{
+    background-color: var(--color2);
+    height: 12rem;
+    width: 12rem;
+    border-radius: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    right: -3rem;
+    top: -5rem;
+    padding: 1rem;
+}
+.sub-introduce-container{
+    width: 45rem;
+    display: flex;
+    justify-content: center;
+}
+.pdf-container{
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.introduce-container .card{
+    box-shadow: 1px 1px 10px rgb(212, 212, 212);
+    border-color: white;
+    margin: 0 1rem;
+}
+
+@media (max-width: 1439px) {
+    .contentOfTable{
+        height: 44rem;
+    }
+    .tableContent{
+        width: 13rem;
+    }
+    .contentOfTable{
+        padding: 4rem;
+    }
+    .tableContentContainer{
+        display: flex;
+        gap: 3rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
 }

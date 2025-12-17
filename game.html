@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXEL RUNNER</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+
+    
+<div id="game-container" class="w-[700px] h-[350px]">
+    <canvas id="game-canvas" width="700" height="350"></canvas>
+    
+    <!-- 開始畫面 UI -->
+    <div id="start-screen" class="game-ui">
+        <div class="pixel-text flex flex-col items-center">
+            <h1 class="text-xl mb-4">PIXEL RUNNER</h1>
+            <p class="mb-4 text-left">HOW TO PLAY:</p>
+            <p class="mb-8 w-full max-w-xs text-left">HOLD **SPACEBAR** OR CLICK/TAP TO JUMP. RELEASE TO LAND.</p>
+            <button id="start-button" class="game-button">START GAME</button>
+        </div>
+    </div>
+
+    <!-- 遊戲結束畫面 UI (字體已縮小) -->
+    <div id="game-over-screen" class="game-ui hidden">
+        <div class="pixel-text flex flex-col items-center">
+            <!-- 標題縮小至 text-xl -->
+            <h1 class="text-xl mb-4 text-red-600">GAME OVER</h1> 
+            <!-- 內文縮小至 text-sm -->
+            <p id="final-score" class="text-sm mb-2">DISTANCE: 0 M</p> 
+            <!-- 評價縮小至 text-sm -->
+            <p id="evaluation" class="text-sm mb-8 font-bold"></p> 
+            <button id="restart-button" class="game-button">RESTART</button>
+        </div>
+    </div>
+
+    <!-- 遊戲進行中的 UI 資訊 (分數和作者標示) -->
+    <div class="absolute top-2 left-2 pixel-text text-gray-800">
+        DISTANCE: <span id="score-display">0</span> M
+    </div>
+    <div class="absolute top-2 right-2 pixel-text text-gray-700">
+        111219030 黃湘涵
+    </div>
+</div>
+
+<script type="module">
+    // --- 遊戲初始化和常數設定 ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    
+    // 遊戲單位 (定義像素塊的大小)
+    const UNIT = 20;
+
+    // 遊戲狀態元素
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const scoreDisplay = document.getElementById('score-display');
+    const finalScoreEl = document.getElementById('final-score');
+    const evaluationEl = document.getElementById('evaluation');
+    const startButton = document.getElementById('start-button');
+    const restartButton = document.getElementById('restart-button');
+
+    // 遊戲變數
+    let gameLoopId;
+    let isGameRunning = false;
+    let isGameOver = false;
+    let score = 0;
+    
+    // 遊戲物理常數 (已調整，Min Jump ~40px, Max Jump ~70px)
+    const BASE_GRAVITY = 1.2; 
+    const JUMP_BOOST = -0.7; // 中等升力
+    const MAX_JUMP_DURATION = 10; // 最大按鍵時間 (幀)
+    const JUMP_VELOCITY_INITIAL = -9.8; // 初始速度 (~40px 最小跳躍高度)
+    const GROUND_LEVEL = HEIGHT - UNIT * 2;
+    
+    let GAME_SPEED = 6; 
+    const MAX_SPEED = 12; 
+    
+    // 玩家設定
+    const PLAYER_WIDTH = 20;
+    const PLAYER_HEIGHT = 40;
+    
+    // 障礙物列表
+    let obstacles = [];
+    let obstacleTimer = 0;
+    const OBSTACLE_INTERVAL_MIN = 80;
+    const OBSTACLE_INTERVAL_MAX = 150;
+    
+    // 地面繪製: 保持 groundX 連續遞減
+    let groundX = 0; 
+
+    // 玩家輸入狀態
+    let isJumpKeyDown = false; 
+    let jumpHoldFrames = 0;    
+    
+    // --- 像素畫顏色 (黑白配色) ---
+    const C = {
+        CANVAS: '#ffffff', // 白
+        BG_CLOUD: '#eeeeee', // 雲朵/最遠景 - 極淺灰 
+        BG_MOUNTAIN: '#cccccc', // 山脈 - 淺灰 (更淡)
+        BG_FOREST: '#999999', // 樹林 - 中灰 (更淡)
+        GROUND_DARK: '#333333', // 深灰 (前景)
+        GROUND_LIGHT: '#cccccc', // 淺灰 (前景)
+        PLAYER_SKIN: '#000000', // 黑
+        PLAYER_HAIR: '#000000', // 黑
+        PLAYER_SHIRT: '#000000', // 黑
+        PLAYER_PANTS: '#000000', // 黑
+        OBSTACLE_GREEN: '#000000', // 黑
+        OBSTACLE_DARK: '#000000' // 黑
+    };
+
+    /**
+     * Helper function for correct positive modulo wrapping with negative numbers.
+     */
+    const safeModulo = (value, modulus) => (value % modulus + modulus) % modulus;
+
+    // --- Scene Constants for seamless looping ---
+    
+    // 山脈: 增加密度，模式寬度減小
+    const M_PATTERN_WIDTH = 350; // 減小至 350px
+    const M_NUM_SETS = 4; // 增加繪製組數
+    const M_MODULUS = M_PATTERN_WIDTH * M_NUM_SETS; 
+
+    // 樹林: 模式寬度 120px
+    const T_PATTERN_WIDTH = 120;
+    const T_NUM_SETS = 7;
+    const T_MODULUS = T_PATTERN_WIDTH * T_NUM_SETS; 
+
+    // --- 玩家類別 (Player Class) ---
+    class Player {
+        constructor() {
+            this.x = UNIT * 3;
+            this.y = GROUND_LEVEL - PLAYER_HEIGHT;
+            this.vy = 0;
+            this.isJumping = false;
+            this.animationTick = 0; 
+            this.frameIndex = 0; 
+        }
+
+        update() {
+            let gravity = BASE_GRAVITY;
+
+            // 處理可變跳躍高度
+            if (this.isJumping && isJumpKeyDown && jumpHoldFrames < MAX_JUMP_DURATION) {
+                gravity += JUMP_BOOST; 
+                jumpHoldFrames++;
+            } else if (this.isJumping) {
+                jumpHoldFrames = MAX_JUMP_DURATION; 
+            }
+
+            this.vy += gravity;
+            this.y += this.vy;
+
+            // 檢查是否落地
+            if (this.y >= GROUND_LEVEL - PLAYER_HEIGHT) {
+                this.y = GROUND_LEVEL - PLAYER_HEIGHT;
+                this.vy = 0;
+                this.isJumping = false;
+                jumpHoldFrames = 0;
+            }
+            
+            // 更新跑步動畫計數器
+            if (!this.isJumping) {
+                this.animationTick++;
+                this.frameIndex = Math.floor(this.animationTick / 4) % 6; 
+            } else {
+                this.frameIndex = -1; // -1 表示跳躍幀
+            }
+        }
+
+        // 玩家跳躍的起始點
+        startJump() {
+            if (!this.isJumping) {
+                this.vy = JUMP_VELOCITY_INITIAL;
+                this.isJumping = true;
+                isJumpKeyDown = true;
+                jumpHoldFrames = 0; 
+            }
+        }
+
+        // 處理按鍵鬆開
+        endJumpHold() {
+            isJumpKeyDown = false;
+        }
+
+        /**
+         * 繪製黑白像素剪影玩家角色 (跑步動畫)
+         */
+        draw() {
+            let frame = this.isJumping ? -1 : this.frameIndex;
+            const px = (x, y) => ctx.fillRect(this.x + x, this.y + y, 1, 1);
+            const drawRectangle = (x, y, w, h, color) => {
+                ctx.fillStyle = color;
+                for (let i = 0; i < w; i++) {
+                    for (let j = 0; j < h; j++) {
+                        px(x + i, y + j);
+                    }
+                }
+            };
+            
+            ctx.fillStyle = C.PLAYER_SHIRT; // 黑色剪影
+            
+            // 1. 頭部與身體上部 (5~15 X 0~22)
+            drawRectangle(5, 0, 10, 23, C.PLAYER_SHIRT); 
+
+            // 4. 手臂 (簡化)
+            drawRectangle(4, 8, 2, 10, C.PLAYER_SHIRT);
+            drawRectangle(15, 8, 2, 10, C.PLAYER_SHIRT);
+
+            // 3. 腿部 (不同幀)
+            ctx.fillStyle = C.PLAYER_PANTS; // 黑色
+            const drawLegs = (legFrame) => {
+                switch (legFrame) {
+                    case 0: case -1: 
+                        drawRectangle(6, 23, 4, 17, C.PLAYER_PANTS); 
+                        drawRectangle(11, 23, 4, 17, C.PLAYER_PANTS); 
+                        break;
+                    case 1: case 5: 
+                        drawRectangle(6, 23, 4, 13, C.PLAYER_PANTS); 
+                        drawRectangle(11, 25, 4, 15, C.PLAYER_PANTS); 
+                        break;
+                    case 2: case 4: 
+                        drawRectangle(6, 25, 4, 15, C.PLAYER_PANTS); 
+                        drawRectangle(11, 23, 4, 13, C.PLAYER_PANTS); 
+                        break;
+                    case 3: 
+                        drawRectangle(6, 24, 4, 16, C.PLAYER_PANTS); 
+                        drawRectangle(11, 24, 4, 16, C.PLAYER_PANTS); 
+                        break;
+                }
+            };
+            drawLegs(frame);
+        }
+    }
+
+    const player = new Player();
+
+    // --- 障礙物類別 (Obstacle Class) ---
+    class Obstacle {
+        constructor(width, height, type) {
+            this.x = WIDTH;
+            this.width = width;
+            this.height = height;
+            this.type = type; 
+            this.y = GROUND_LEVEL - this.height; 
+            
+            this.collisionWidth = (type === 2) ? UNIT * 2 : UNIT;
+            this.collisionHeight = this.height;
+        }
+
+        update() {
+            // 確保障礙物 X 座標取整，避免抖動
+            this.x = Math.floor(this.x - GAME_SPEED);
+        }
+
+        /**
+         * 繪製黑白像素剪影障礙物
+         */
+        draw() {
+            if (this.type < 2) {
+                // 仙人掌 (黑色剪影)
+                ctx.fillStyle = C.OBSTACLE_GREEN; 
+                // 繪製主體
+                ctx.fillRect(this.x, this.y, 4, this.height);
+                ctx.fillRect(this.x + 4, this.y, 12, this.height - 4);
+                ctx.fillRect(this.x + 16, this.y, 4, this.height);
+                
+                // 繪製細節和手臂
+                if (this.height >= UNIT * 2) { 
+                    ctx.fillRect(this.x - 4, this.y + 20, 4, 6);
+                    ctx.fillRect(this.x + 20, this.y + 10, 4, 6);
+                } else { 
+                    ctx.fillRect(this.x - 2, this.y + 4, 2, 4);
+                    ctx.fillRect(this.x + 20, this.y + 4, 2, 4);
+                }
+                
+                // 底部邊緣
+                ctx.fillStyle = C.GROUND_DARK; 
+                ctx.fillRect(this.x, this.y + this.height - 4, this.width, 4);
+                
+            } else {
+                // 寬型石頭 (黑色剪影)
+                ctx.fillStyle = C.OBSTACLE_DARK; 
+                // 繪製兩個相連的方塊 (2x1 單位)
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // 模擬裂紋 (白色)
+                ctx.fillStyle = C.CANVAS; 
+                ctx.fillRect(this.x + 5, this.y + 5, 2, 2);
+                ctx.fillRect(this.x + 15, this.y + 8, 2, 2);
+                ctx.fillRect(this.x + 25, this.y + 5, 2, 2);
+            }
+        }
+    }
+
+    // --- 遊戲邏輯函數 ---
+
+    /**
+     * 根據類型創建三種不同的障礙物
+     */
+    function createObstacle() {
+        const type = Math.floor(Math.random() * 3);
+        let obs;
+        
+        switch(type) {
+            case 0: // 小型仙人掌 (1x1 block = 20x20)
+                obs = new Obstacle(UNIT, UNIT, 0); 
+                break;
+            case 1: // 高型仙人掌 (1x2 block = 20x40)
+                obs = new Obstacle(UNIT, UNIT * 2, 1);
+                break;
+            case 2: // 寬型石頭 (2x1 block = 40x20)
+                obs = new Obstacle(UNIT * 2, UNIT, 2);
+                break;
+            default:
+                obs = new Obstacle(UNIT, UNIT, 0);
+        }
+        obstacles.push(obs);
+        // 設定下一個障礙物的生成時間
+        obstacleTimer = OBSTACLE_INTERVAL_MIN + Math.random() * (OBSTACLE_INTERVAL_MAX - OBSTACLE_INTERVAL_MIN);
+    }
+
+    /**
+     * 繪製視差背景和前景地面 (Parallax Background and Foreground Ground)
+     */
+    function drawScene() {
+        
+        // 1. 更新全局滾動位移 (連續遞減)
+        groundX -= GAME_SPEED;
+
+        // --- 1. 背景雲朵/點狀紋理 (最遠層) ---
+        ctx.fillStyle = C.BG_CLOUD; // 極淺灰
+        const cloudSpeedFactor = 0.05; 
+        const cloudRepeatWidth = 50; 
+        const numClouds = Math.ceil(WIDTH / cloudRepeatWidth) + 1; 
+        const cloudOffset = groundX * cloudSpeedFactor;
+        const cloudModulus = cloudRepeatWidth * numClouds; 
+
+        for (let i = 0; i < numClouds + 1; i++) { 
+            const x = Math.floor(safeModulo((i * cloudRepeatWidth) + cloudOffset, cloudModulus));
+            const y = 50 + (i % 5) * 10;
+            
+            ctx.fillRect(x, y, 4, 4);
+        }
+
+        // --- 2. 遠處山脈 (中遠層) ---
+        ctx.fillStyle = C.BG_MOUNTAIN; // 淺灰
+        const mountainSpeedFactor = 0.15;
+        const mountainPatternWidth = M_PATTERN_WIDTH; 
+        const numMountainSets = M_NUM_SETS;
+        const mountainModulus = M_MODULUS;
+        const mountainOffset = groundX * mountainSpeedFactor; 
+        const mountainBaseY = GROUND_LEVEL - UNIT; 
+
+        const drawMountain = (x, y, w, h) => {
+            // 簡化像素山脈繪製 (多邊形)
+            ctx.beginPath();
+            ctx.moveTo(x, y); // 底部左側
+            ctx.lineTo(x + w / 2, y - h); // 山頂
+            ctx.lineTo(x + w, y); // 底部右側
+            // 延伸到底部，消除山底空白
+            ctx.lineTo(x + w, HEIGHT); 
+            ctx.lineTo(x, HEIGHT);
+            ctx.fill();
+        };
+
+        for (let i = 0; i < numMountainSets; i++) { 
+            const basePos = (i * mountainPatternWidth) + mountainOffset;
+            let x = Math.floor(safeModulo(basePos, mountainModulus));
+            
+            // 繪製山峰 A (150寬, 80高) - 放大尺寸
+            drawMountain(x, mountainBaseY, 150, 80);
+            // 繪製山峰 B (100寬, 60高, 稍微偏移) - 放大尺寸
+            drawMountain(x + 120, mountainBaseY, 100, 60);
+            // 繪製山峰 C (80寬, 40高, 增加密度)
+            drawMountain(x + 250, mountainBaseY, 80, 40);
+        }
+        
+        // --- 3. 近處森林/樹林 (中近層) ---
+        ctx.fillStyle = C.BG_FOREST; // 中灰
+        const forestSpeedFactor = 0.35;
+        const treePatternWidth = T_PATTERN_WIDTH; 
+        const numTrees = T_NUM_SETS; 
+        const forestModulus = T_MODULUS;
+        const forestOffset = groundX * forestSpeedFactor;
+        const treeBaseY = GROUND_LEVEL; 
+
+        const drawTree = (x) => {
+            
+            // 確保樹底延伸至 HEIGHT，消除底部空白
+            ctx.fillRect(x + 8, treeBaseY - 10, 4, HEIGHT - treeBaseY + 10); // 樹幹延伸到邊緣
+
+            // 樹冠 (放大尺寸)
+            ctx.fillRect(x, treeBaseY - 30, 20, 4);
+            ctx.fillRect(x + 2, treeBaseY - 26, 16, 4);
+            ctx.fillRect(x + 4, treeBaseY - 22, 12, 4);
+        };
+        
+        for (let i = 0; i < numTrees; i++) { 
+            const basePos = (i * treePatternWidth) + forestOffset;
+            let x = Math.floor(safeModulo(basePos, forestModulus));
+            
+            drawTree(x);
+        }
+
+
+        // --- 4. 前景地面 (最快層) ---
+        
+        // 繪製地面背景色 (淺灰)
+        ctx.fillStyle = C.GROUND_LIGHT;
+        ctx.fillRect(0, GROUND_LEVEL, WIDTH, HEIGHT - GROUND_LEVEL);
+
+        // 繪製滾動的地面線 (深灰)
+        ctx.fillStyle = C.GROUND_DARK;
+        const lineH = 2; // 線條高度
+        
+        // 繪製頂部線條 (地面基準線)
+        ctx.fillRect(0, GROUND_LEVEL, WIDTH, lineH);
+        
+        // --- 繪製地面滾動的斑馬線點狀紋理 (Zebra Crossing Dots) ---
+        const dotSpacing = UNIT; 
+        const dotSize = 4;      
+        const numDots = Math.ceil(WIDTH / dotSpacing);
+        const dotModulus = dotSpacing * numDots;
+        const dotOffset = groundX; // 速度因子為 1
+        
+        ctx.fillStyle = C.GROUND_DARK; 
+        
+        for (let i = 0; i < numDots + 1; i++) { 
+            const x = Math.floor(safeModulo((i * dotSpacing) + dotOffset, dotModulus));
+            const y = GROUND_LEVEL + lineH + (dotSize / 2); 
+            
+            ctx.fillRect(x, y, dotSize, dotSize);
+        }
+        
+        // --- 確保地面線條在最上層，蓋住樹木底部 ---
+        ctx.fillStyle = C.GROUND_DARK;
+        ctx.fillRect(0, GROUND_LEVEL, WIDTH, lineH);
+    }
+
+    /**
+     * 碰撞檢測 (AABB 軸對齊邊界框)
+     */
+    function checkCollision(player, obstacle) {
+        // Player Bounding Box
+        const p_left = player.x;
+        const p_right = player.x + PLAYER_WIDTH;
+        const p_top = player.y;
+        const p_bottom = player.y + PLAYER_HEIGHT;
+
+        // Obstacle Bounding Box
+        const o_left = obstacle.x;
+        const o_right = obstacle.x + obstacle.collisionWidth;
+        const o_top = obstacle.y;
+        const o_bottom = obstacle.y + obstacle.collisionHeight;
+
+        return (p_right > o_left && p_left < o_right &&
+                p_bottom > o_top && p_top < o_bottom);
+    }
+
+    /**
+     * 遊戲結束
+     */
+    function gameOver() {
+        isGameOver = true;
+        cancelAnimationFrame(gameLoopId);
+        
+        // 顯示遊戲結束畫面
+        gameOverScreen.classList.remove('hidden');
+        finalScoreEl.textContent = `DISTANCE: ${Math.floor(score)} M`;
+
+        // 根據分數進行評價
+        let evaluationText = '';
+        let evaluationColor = 'text-black'; // 評價文字也改為黑白
+        
+        if (score < 500) {
+            evaluationText = 'NOOB. TRY AGAIN!';
+        } else if (score < 1500) {
+            evaluationText = 'DECENT RUNNER. KEEP GOING!';
+        } else {
+            evaluationText = 'PARKOUR MASTER!';
+        }
+
+        evaluationEl.textContent = evaluationText;
+        // 使用 text-sm 保持字體大小一致
+        evaluationEl.className = `text-sm mb-8 font-bold ${evaluationColor}`; 
+    }
+
+    /**
+     * 重設遊戲狀態
+     */
+    function resetGame() {
+        isGameRunning = true;
+        isGameOver = false;
+        score = 0;
+        GAME_SPEED = 6;
+        obstacles = [];
+        obstacleTimer = 0;
+        player.y = GROUND_LEVEL - PLAYER_HEIGHT;
+        player.vy = 0;
+        player.isJumping = false;
+        isJumpKeyDown = false;
+        jumpHoldFrames = 0;
+        
+        // 重設 groundX 避免重啟後畫面跳動
+        groundX = 0; 
+        
+        // 隱藏/顯示 UI
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+    }
+
+    /**
+     * 遊戲主循環
+     */
+    function gameLoop() {
+        if (isGameOver) return;
+
+        // 1. 清除畫布
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        
+        // 2. 更新遊戲狀態
+        player.update();
+        
+        // 速度提升 (難度增加)
+        if (GAME_SPEED < MAX_SPEED) {
+            GAME_SPEED += 0.005;
+        }
+        
+        // 障礙物生成
+        obstacleTimer--;
+        if (obstacleTimer <= 0) {
+            createObstacle();
+        }
+
+        // 3. 繪製並更新場景 (包含背景和前景地面)
+        drawScene();
+
+        // 4. 繪製並更新障礙物
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
+            obs.update();
+            obs.draw();
+
+            // 碰撞檢測
+            if (checkCollision(player, obs)) {
+                gameOver();
+                return;
+            }
+
+            // 移除出界障礙物
+            if (obs.x + obs.width < 0) {
+                obstacles.splice(i, 1);
+            }
+        }
+        
+        // 5. 繪製玩家
+        player.draw();
+
+        // 6. 更新分數
+        score += (GAME_SPEED / 60); 
+        scoreDisplay.textContent = Math.floor(score).toString().padStart(4, '0');
+        
+        // 7. 循環
+        gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    // --- 事件監聽 ---
+    
+    // 鍵盤輸入 (空白鍵 - 按下)
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === ' ') {
+            e.preventDefault(); 
+            if (!isGameRunning) {
+                startGame();
+            } else if (!isGameOver && !player.isJumping) {
+                player.startJump();
+            }
+        }
+    });
+
+    // 鍵盤輸入 (空白鍵 - 鬆開)
+    document.addEventListener('keyup', (e) => {
+        if ((e.code === 'Space' || e.key === ' ') && isGameRunning && player.isJumping) {
+            player.endJumpHold();
+        }
+    });
+
+    // 點擊/觸摸輸入 (按下/觸摸開始)
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && isGameRunning && !player.isJumping) {
+            player.startJump();
+        }
+    });
+    canvas.addEventListener('touchstart', () => {
+        if (isGameRunning && !player.isJumping) {
+            player.startJump();
+        }
+    });
+
+    // 點擊/觸摸輸入 (鬆開/觸摸結束)
+    canvas.addEventListener('mouseup', () => {
+        if (isGameRunning && player.isJumping) {
+            player.endJumpHold();
+        }
+    });
+    canvas.addEventListener('touchend', () => {
+        if (isGameRunning && player.isJumping) {
+            player.endJumpHold();
+        }
+    });
+    
+    // UI按鈕事件
+    startButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', startGame);
+
+    /**
+     * 啟動遊戲
+     */
+    function startGame() {
+        if (!isGameRunning || isGameOver) {
+            resetGame();
+            gameLoop();
+        }
+    }
+
+    // 初始化時顯示開始畫面
+    window.onload = () => {
+        // 繪製初始地面
+        ctx.fillStyle = C.GROUND_LIGHT;
+        ctx.fillRect(0, GROUND_LEVEL, WIDTH, HEIGHT - GROUND_LEVEL);
+        startScreen.classList.remove('hidden');
+    }
+
+</script>
+
+</body>
+</html>
